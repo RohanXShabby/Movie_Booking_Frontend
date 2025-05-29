@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../Services/axiosInstance";
 
 const PasswordReset = () => {
   const [formData, setFormData] = useState({
@@ -100,8 +101,8 @@ const PasswordReset = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.post(
-        "http://localhost:3000/api/password-reset",
+      const response = await axiosInstance.post(
+        "/password-reset",
         {
           email,
           newPassword,

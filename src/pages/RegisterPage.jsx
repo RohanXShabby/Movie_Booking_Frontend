@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import axiosInstance from "../Services/axiosInstance";
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -69,7 +70,7 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.post("http://localhost:3000/api/register", {
+      const response = await axiosInstance.post("/register", {
         name,
         email,
         password,
