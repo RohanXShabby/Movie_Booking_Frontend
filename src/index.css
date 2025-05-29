@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@theme {
+  --color-dark-primary: #222831;
+  --color-dark-secondary: #30475e;
+  --color-dark-accent: #f05454;
+  --color-dark-text: #eeeeee;
+}
+
+@theme {
+  --spacing-primary: 5vw;
+}
+
+@layer utilities {
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+}
