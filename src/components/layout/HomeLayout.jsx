@@ -12,7 +12,6 @@ const HomeLayout = () => {
             <div className='min-h-screen flex flex-col justify-between text-dark-text bg-dark-primary '>
                 <Navbar />
                 {navigate.state === "loading" ? <BeatLoader /> : <Outlet />}
-
                 <Footer />
             </div>
         </>
