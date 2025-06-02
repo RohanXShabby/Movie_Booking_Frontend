@@ -9,9 +9,9 @@ const HomeLayout = () => {
     const navigate = useNavigation()
     return (
         <>
-            <div className='min-h-screen flex flex-col justify-between text-dark-text bg-dark-primary '>
+            <div className='min-h-screen flex flex-col justify-between  text-dark-text bg-dark-primary '>
                 <Navbar />
-                {navigate.state === "loading" ? <BeatLoader /> : <Outlet />}
+                {navigate.state === "loading" ? <div className='w-screen h-screen flex items-center justify-center'><BeatLoader color='#f05454' /></div> : <Outlet />}
                 <Footer />
             </div>
         </>

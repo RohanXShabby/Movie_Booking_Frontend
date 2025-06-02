@@ -1,23 +1,10 @@
-import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
-import axiosInstance from "../../Services/axiosInstance";
+import { useParams, useLoaderData, Link } from "react-router-dom";
+import { useState } from "react";
 
 const SelectTheater = () => {
     const { id } = useParams();
-    const [theaters, setTheaters] = useState([]);
+    const theaters = useLoaderData();
     const [selected, setSelected] = useState({ theaterId: null, showIdx: null });
-
-    useEffect(() => {
-        const fetchTheater = async () => {
-            try {
-                const res = await axiosInstance(`/get-theater/${id}`);
-                setTheaters(res.data.theaters || []);
-            } catch (err) {
-                setTheaters([]);
-            }
-        };
-        fetchTheater();
-    }, [id]);
 
     const grouped = {};
     theaters.forEach(show => {
@@ -54,10 +41,9 @@ const SelectTheater = () => {
                             <Link
                                 to={`/movies/book-tickets/${id}/${group.theater?._id}/${encodeURIComponent(show.time)}`}
                                 key={show._id}
-                                type="button"
                                 onClick={() => setSelected({ theaterId: group.theater?._id, showIdx: idx })}
-                                className={`cursor-pointer px-6 py-1 rounded-xl font-semibold text-lg flex flex-col  items-center leading-6 min-w-[120px] shadow-sm transition
-                                    ${selected.theaterId === group.theater?._id && selected.showIdx === idx
+                                className={`cursor-pointer px-6 py-1 rounded-xl font-semibold text-lg flex flex-col items-center leading-6 min-w-[120px] shadow-sm transition
+                  ${selected.theaterId === group.theater?._id && selected.showIdx === idx
                                         ? 'bg-dark-accent text-white'
                                         : 'bg-dark-text text-black hover:bg-dark-accent hover:text-white'}`}
                             >

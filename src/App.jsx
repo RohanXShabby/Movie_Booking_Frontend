@@ -17,6 +17,8 @@ import AdminPanel from "./pages/AdminPanel.jsx";
 import MoviesBookingPage from "./pages/MoviesBookingPage.jsx";
 import TicketBookingPage from "./pages/TicketBookingPage.jsx";
 import SelectSeats from "./components/UI/SelectSeats.jsx";
+import axiosInstance from "./Services/axiosInstance.js";
+import { getAllMovie, getMovieById, getTheatersByMovie } from "./api/user.api.js";
 
 function App() {
   const router = createBrowserRouter([
@@ -25,11 +27,11 @@ function App() {
       element: <HomeLayout />,
       errorElement: <ErrorPage />,
       children: [
-        { path: "/", element: <HomePage /> },
+        { path: "/", element: <HomePage />, loader: getAllMovie },
         { path: "/account", element: <AccountPage /> },
-        { path: "/movies", element: <MoviesPage /> },
-        { path: "/movies/:id", element: <MoviesBookingPage /> },
-        { path: "/movies/book-tickets/:id", element: <TicketBookingPage /> },
+        { path: "/movies", element: <MoviesPage />, loader: getAllMovie },
+        { path: "/movies/:id", element: <MoviesBookingPage />, loader: getMovieById },
+        { path: "/movies/book-tickets/:id", element: <TicketBookingPage />, loader: getTheatersByMovie, },
         { path: "/movies/book-tickets/:id/:theaterId/:time", element: <SelectSeats /> },
         { path: "/tickets", element: <TicketPage /> },
         { path: "/tickets", element: <TicketPage /> },

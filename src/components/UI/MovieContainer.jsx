@@ -1,19 +1,15 @@
 import axiosInstance from "../../Services/axiosInstance";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import MovieCard from "./MovieCard";
 
 const MovieContainer = () => {
+
+    const Data = useLoaderData()
     const [movies, setMovies] = useState()
 
-    const fetchedMovie = async () => {
-        const request = await axiosInstance.get('/get-movies');
-        const response = await request.data?.movies
-        setMovies([...response])
-    }
-
     useEffect(() => {
-        fetchedMovie()
+        setMovies(Data)
     }, [])
 
     return (

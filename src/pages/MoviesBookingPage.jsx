@@ -1,24 +1,16 @@
 import axiosInstance from "../Services/axiosInstance"
-import { useParams } from "react-router-dom"
+import { useLoaderData, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
 const MoviesBookingPage = () => {
     const { id } = useParams()
+    const Data = useLoaderData()
+
     const [moviesDetails, setMoviesDetails] = useState({});
-
-
-    const fetchMovieData = async () => {
-        const request = await axiosInstance.get(`/movies/${id}`)
-        const data = await request.data.data
-        return data
-    }
     useEffect(() => {
-        fetchMovieData().then((data) => {
-            setMoviesDetails(data)
-        })
-    }, []);
-    // { console.log(moviesDetails) }
+        setMoviesDetails(Data)
+    }, [id]);
 
     return (
         <div className="px-24">
