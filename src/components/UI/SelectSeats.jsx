@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../../Services/axiosInstance';
 
 const SelectSeats = () => {
-    const { screenId } = useParams();
+    const { ScreenId } = useParams();  // Changed from screenId to ScreenId to match route parameter
     const [screenData, setScreenData] = useState(null);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -14,8 +14,8 @@ const SelectSeats = () => {
             try {
                 setIsLoading(true);
                 setError(null);
-                const response = await axiosInstance.get(`/screens/${screenId}`);
-                setScreenData(response.data);
+                const response = await axiosInstance.get(`/screens/${ScreenId}`);
+                setScreenData(response.data.screen); // Added .screen since that's the property name in the API response
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to fetch screen data');
             } finally {
@@ -24,7 +24,7 @@ const SelectSeats = () => {
         };
 
         fetchScreenData();
-    }, [screenId]);
+    }, [ScreenId]);  // Updated dependency
 
     const toggleSeat = (seatNumber) => {
         setSelectedSeats(prev =>
@@ -41,7 +41,7 @@ const SelectSeats = () => {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px] text-white">
-                <div className="text-xl">Loading seat layout...</div>
+                <div className=" text-dark-accent font-semibold text-2xl">Loading seat layout...</div>
             </div>
         );
     }

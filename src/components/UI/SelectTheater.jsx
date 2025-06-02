@@ -17,9 +17,10 @@ const SelectTheater = () => {
         }
         grouped[tId].shows.push(show);
     });
-    console.log(theaters)
+
+    console.log("Raw theaters data:", theaters); // Debug log
+
     const groupedTheaters = Object.values(grouped);
-    console.log(groupedTheaters)
 
     return (
         <div className="px-40 py-20 flex flex-col gap-8">
@@ -39,21 +40,25 @@ const SelectTheater = () => {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-4 mt-2">
-                        {group.shows.map((show, idx) => (
-                            <Link
-                                to={`/movies/book-tickets/${id}/${group.theater?._id}/${show.screenId}`}
-                                key={show._id}
-                                onClick={() => setSelected({ theaterId: group.theater?._id, showIdx: idx })}
-                                className={`cursor-pointer px-6 py-1 rounded-xl font-semibold text-lg flex flex-col items-center leading-6 min-w-[120px] shadow-sm transition ${selected.theaterId === group.theater?._id && selected.showIdx === idx
-                                    ? 'bg-dark-accent text-white'
-                                    : 'bg-dark-text text-black hover:bg-dark-accent hover:text-white'}`}
-                            >
-                                <span>{show.time}</span>
-                                {show.format && (
-                                    <span className="text-xs font-normal text-gray-500 mt-1">{show.format}</span>
-                                )}
-                            </Link>
-                        ))}
+                        {group.shows.map((show, idx) => {
+                            console.log("Show data:", show); // Debug log
+                            const screenId = show.screenId?._id || show.screenId;
+                            return (
+                                <Link
+                                    to={`/movies/book-tickets/${id}/${group.theater?._id}/${screenId}/${show._id}`}
+                                    key={show._id}
+                                    onClick={() => setSelected({ theaterId: group.theater?._id, showIdx: idx })}
+                                    className={`cursor-pointer px-6 py-1 rounded-xl font-semibold text-lg flex flex-col items-center leading-6 min-w-[120px] shadow-sm transition ${selected.theaterId === group.theater?._id && selected.showIdx === idx
+                                        ? 'bg-dark-accent text-white'
+                                        : 'bg-dark-text text-black hover:bg-dark-accent hover:text-white'}`}
+                                >
+                                    <span>{show.time}</span>
+                                    {show.format && (
+                                        <span className="text-xs font-normal text-gray-500 mt-1">{show.format}</span>
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             ))}
