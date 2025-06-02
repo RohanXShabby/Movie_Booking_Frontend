@@ -17,7 +17,6 @@ import AdminPanel from "./pages/AdminPanel.jsx";
 import MoviesBookingPage from "./pages/MoviesBookingPage.jsx";
 import TicketBookingPage from "./pages/TicketBookingPage.jsx";
 import SelectSeats from "./components/UI/SelectSeats.jsx";
-import axiosInstance from "./Services/axiosInstance.js";
 import { getAllMovie, getMovieById, getTheatersByMovie } from "./api/user.api.js";
 
 function App() {
@@ -32,7 +31,7 @@ function App() {
         { path: "/movies", element: <MoviesPage />, loader: getAllMovie },
         { path: "/movies/:id", element: <MoviesBookingPage />, loader: getMovieById },
         { path: "/movies/book-tickets/:id", element: <TicketBookingPage />, loader: getTheatersByMovie, },
-        { path: "/movies/book-tickets/:id/:theaterId/:time", element: <SelectSeats /> },
+        { path: "/movies/book-tickets/:id/:theaterId/:ScreenId", element: <SelectSeats /> },
         { path: "/tickets", element: <TicketPage /> },
         { path: "/tickets", element: <TicketPage /> },
         { path: "/admin", element: <AdminPanel /> },
@@ -44,14 +43,7 @@ function App() {
         { path: "/enterotp", element: <EnterOTP /> },
         { path: "/password-reset", element: <PasswordReset /> },
       ],
-    },
-    // { path: "/checkmail", element: <CheckYourEmail /> },
-    // { path: "/verifiedstatus", element: <VerifiedSuccess /> },
-    // { path: "/login", element: <LoginPage /> },
-    // { path: "/register", element: <RegisterPage /> },
-    // { path: "/emailforotp", element: <EmailforOTP /> },
-    // { path: "/enterotp", element: <EnterOTP /> },
-    // { path: "/password-reset", element: <PasswordReset /> },
+    }
   ]);
 
   return (

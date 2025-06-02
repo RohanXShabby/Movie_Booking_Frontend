@@ -1,40 +1,30 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import axiosInstance from '../../Services/axiosInstance';
 
-const Screens = {
-    name: "Audi 1",
-    totalSeats: 20,
-    layout: [
-        [
-            { seatNumber: "A1", seatType: "Premium", available: true },
-            { seatNumber: "A2", seatType: "Premium", available: true },
-            { seatNumber: "A3", seatType: "Premium", available: true },
-            { seatNumber: "A4", seatType: "Premium", available: true },
-            { seatNumber: "A5", seatType: "Premium", available: true },
-            { seatNumber: "A6", seatType: "Premium", available: true },
-            { seatNumber: "A7", seatType: "Premium", available: true },
-            { seatNumber: "A8", seatType: "Premium", available: true },
-            { seatNumber: "A9", seatType: "Premium", available: true },
-            { seatNumber: "A10", seatType: "Premium", available: true },
-        ],
-        [
-            { seatNumber: "B1", seatType: "Regular", available: true },
-            { seatNumber: "B2", seatType: "Regular", available: true },
-            { seatNumber: "B3", seatType: "Regular", available: true },
-            { seatNumber: "B4", seatType: "Regular", available: true },
-            { seatNumber: "B5", seatType: "Regular", available: true },
-            { seatNumber: "B6", seatType: "Regular", available: true },
-            { seatNumber: "B7", seatType: "Regular", available: true },
-            { seatNumber: "B8", seatType: "Regular", available: true },
-            { seatNumber: "B9", seatType: "Regular", available: true },
-            { seatNumber: "B10", seatType: "Regular", available: true },
-        ]
-    ]
-};
-
 const SelectSeats = () => {
-    const { layout } = Screens;
+    const { screenId } = useParams();
+    const [screenData, setScreenData] = useState(null);
     const [selectedSeats, setSelectedSeats] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchScreenData = async () => {
+            try {
+                setIsLoading(true);
+                setError(null);
+                const response = await axiosInstance.get(`/screens/${screenId}`);
+                setScreenData(response.data);
+            } catch (err) {
+                setError(err.response?.data?.message || 'Failed to fetch screen data');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchScreenData();
+    }, [screenId]);
 
     const toggleSeat = (seatNumber) => {
         setSelectedSeats(prev =>
@@ -48,6 +38,30 @@ const SelectSeats = () => {
         console.log("Proceeding to payment with:", selectedSeats);
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px] text-white">
+                <div className="text-xl">Loading seat layout...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px] text-white">
+                <div className="text-xl text-red-500">{error}</div>
+            </div>
+        );
+    }
+
+    if (!screenData) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px] text-white">
+                <div className="text-xl">No seat layout found</div>
+            </div>
+        );
+    }
+
     return (
         <div className="relative px-4 py-6 text-white bg-dark-primary">
             {/* Selected Seat Counter */}
@@ -55,21 +69,32 @@ const SelectSeats = () => {
                 Selected: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
             </div>
 
+            {/* Screen Info */}
+            <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold">{screenData.screenName}</h2>
+                <p className="text-sm text-gray-400">Total Seats: {screenData.totalSeats}</p>
+            </div>
+
             {/* Seat Layout */}
             <div className="flex flex-col items-center gap-6 mt-10">
-                {layout.map((row, rowIndex) => (
+                {screenData.layout.map((row, rowIndex) => (
                     <div key={rowIndex} className="flex gap-2">
                         {row.map((seat, seatIndex) => {
                             const isSelected = selectedSeats.includes(seat.seatNumber);
+                            const isBooked = seat.isBooked;
                             return (
                                 <span
                                     key={seatIndex}
-                                    onClick={() => toggleSeat(seat.seatNumber)}
+                                    onClick={() => !isBooked && toggleSeat(seat.seatNumber)}
                                     className={`
-                    p-2 h-12 w-12 flex items-center justify-center rounded-sm text-sm cursor-pointer
-                    border-2
-                    ${isSelected ? 'bg-dark-accent text-white border-dark-accent' : 'border-dark-accent hover:bg-dark-accent/50'}
-`}
+                                        p-2 h-12 w-12 flex items-center justify-center rounded-sm text-sm
+                                        ${isBooked
+                                            ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                                            : isSelected
+                                                ? 'bg-dark-accent text-white border-dark-accent cursor-pointer'
+                                                : 'border-2 border-dark-accent hover:bg-dark-accent/50 cursor-pointer'
+                                        }
+                                    `}
                                 >
                                     {seat.seatNumber}
                                 </span>
@@ -85,18 +110,17 @@ const SelectSeats = () => {
                 </div>
 
                 {/* Move to Payment */}
-
                 <button
                     disabled={selectedSeats.length === 0}
                     onClick={handlePayment}
                     className={`mt-10 font-semibold px-6 py-3 rounded-lg shadow-md transition-all duration-200 
-    ${selectedSeats.length === 0
+                        ${selectedSeats.length === 0
                             ? "bg-gray-400 cursor-not-allowed text-white"
-                            : "bg-dark-accent cursor-pointer hover:bg-green-700 text-white"}`}
+                            : "bg-dark-accent cursor-pointer hover:bg-green-700 text-white"
+                        }`}
                 >
                     Move to Payment
                 </button>
-
             </div>
         </div>
     );
