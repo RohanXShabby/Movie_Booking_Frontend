@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { FaUser, FaTicketAlt, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import axiosInstance from '../Services/axiosInstance';
@@ -8,26 +8,33 @@ const AccountPage = () => {
     const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const navigate = useNavigate();
-    { user && console.log(user) }
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [stats, setStats] = useState({
+        totalBookings: 0
+    }); useEffect(() => {
+        const fetchUserBookings = async () => {
+            try {
+                console.log('Fetching bookings...'); 
+                const response = await axiosInstance.get('/user/bookings');
+                console.log('Bookings response:', response.data); 
+                setBookings(response.data.bookings);
+                setStats({
+                    totalBookings: response.data.totalBookings
+                });
+            } catch (err) {
+                console.error('Booking fetch error:', err); 
+                setError(err.response?.data?.message || 'Failed to fetch bookings');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Mock data for demonstration (replace with actual API calls)
-    const [userDetails] = useState({
-        name: "Rohan Bisht",
-        email: 'user@example.com',
-        joinedDate: 'May 2024',
-        totalBookings: 12
-    });
-
-    const [bookingHistory] = useState([
-        {
-            id: 1,
-            title: 'Inception',
-            date: '2024-05-15',
-            time: '18:30',
-            seats: ['A1', 'A2'],
-            total: '$30'
-        },
-    ]);
+        if (user) {
+            fetchUserBookings();
+        }
+    }, [user]);
 
     const handleLogout = async () => {
         try {
@@ -39,6 +46,22 @@ const AccountPage = () => {
     };
 
     const renderTabContent = () => {
+        if (loading) {
+            return (
+                <div className="flex justify-center items-center h-64">
+                    <div className="text-xl text-gray-400">Loading...</div>
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div className="flex justify-center items-center h-64">
+                    <div className="text-xl text-red-500">{error}</div>
+                </div>
+            );
+        }
+
         switch (activeTab) {
             case 'profile':
                 return (
@@ -52,11 +75,14 @@ const AccountPage = () => {
                                 </div>
                                 <div>
                                     <label className="text-gray-400">Email</label>
-                                    <p className="text-lg">{userDetails.email}</p>
+                                    <p className="text-lg">{user.email}</p>
                                 </div>
                                 <div>
                                     <label className="text-gray-400">Member Since</label>
-                                    <p>{userDetails.joinedDate}</p>
+                                    <p>{new Date(user.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long'
+                                    })}</p>
                                 </div>
                             </div>
                         </div>
@@ -64,10 +90,9 @@ const AccountPage = () => {
                             <h3 className="text-xl font-semibold mb-4">Account Statistics</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="text-center p-4 bg-dark-primary rounded-lg">
-                                    <p className="text-3xl font-bold text-dark-accent">{userDetails.totalBookings}</p>
+                                    <p className="text-3xl font-bold text-dark-accent">{stats.totalBookings}</p>
                                     <p className="text-gray-400">Total Bookings</p>
                                 </div>
-                                {/* Add more statistics */}
                             </div>
                         </div>
                     </div>
@@ -77,19 +102,35 @@ const AccountPage = () => {
                     <div className="bg-dark-secondary p-6 rounded-lg shadow-md">
                         <h3 className="text-xl font-semibold mb-4">Booking History</h3>
                         <div className="space-y-4">
-                            {bookingHistory.map(booking => (
-                                <div key={booking.id} className="bg-dark-primary p-4 rounded-lg flex justify-between items-center">
-                                    <div>
-                                        <h4 className="text-lg font-semibold">{booking.movieName}</h4>
-                                        <p className="text-gray-400">Date: {booking.date} | Time: {booking.time}</p>
-                                        <p className="text-gray-400">Seats: {booking.seats.join(', ')}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-bold text-dark-accent">{booking.total}</p>
-                                        <button className="text-sm text-dark-accent hover:underline">View Details</button>
-                                    </div>
+                            {bookings.length === 0 ? (
+                                <div className="text-center text-gray-400 py-8">
+                                    No bookings found
                                 </div>
-                            ))}
+                            ) : (
+                                bookings.map(booking => (
+                                    <div key={booking.id} className="bg-dark-primary p-4 rounded-lg flex justify-between items-center">
+                                        <div>
+                                            <h4 className="text-lg font-semibold">{booking.movieName}</h4>
+                                            <p className="text-gray-400">
+                                                {booking.theaterName} • {booking.screenName}
+                                            </p>
+                                            <p className="text-gray-400">
+                                                Date: {booking.date} | Time: {booking.time}
+                                            </p>
+                                            <p className="text-gray-400">Seats: {booking.seats.join(', ')}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xl font-bold text-dark-accent">₹{booking.total}</p>
+                                            <span className={`text-sm px-2 py-1 rounded ${booking.isConfirmed
+                                                ? 'bg-green-500/20 text-green-500'
+                                                : 'bg-yellow-500/20 text-yellow-500'
+                                                }`}>
+                                                {booking.isConfirmed ? 'Confirmed' : 'Pending'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 );
