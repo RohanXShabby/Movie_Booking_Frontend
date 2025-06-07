@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../Services/axiosInstance';
-import { FaFilm, FaUsers, FaChartBar, FaPlus } from 'react-icons/fa';
+import { FaFilm, FaUsers, FaChartBar, FaPlus, FaTheaterMasks, FaCalendarAlt } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
+import ManageTheaters from '../components/admin/ManageTheaters';
+import ManageShows from '../components/admin/ManageShows';
 
-const ManageMovies = ({ movies, handleEdit, fetchMovies }) => {
+const ManageMovies = ({ movies, handleEdit, fetchMovies, setActiveTab }) => {
     const handleDelete = async (movieId) => {
         if (window.confirm('Are you sure you want to delete this movie?')) {
             try {
@@ -89,10 +91,140 @@ const ManageMovies = ({ movies, handleEdit, fetchMovies }) => {
 };
 
 const Users = () => {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/users');
+            setUsers(response.data.users || []);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to fetch users');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleStatusChange = async (userId, newStatus) => {
+        try {
+            await axiosInstance.put(`/users/${userId}/status`, { status: newStatus });
+            toast.success('User status updated successfully');
+            fetchUsers();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update user status');
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            try {
+                await axiosInstance.delete(`/users/${userId}`);
+                toast.success('User deleted successfully');
+                fetchUsers();
+            } catch (err) {
+                toast.error(err.response?.data?.message || 'Failed to delete user');
+            }
+        }
+    };
+
+    const filteredUsers = users.filter(user =>
+        statusFilter === 'all' || user.status === statusFilter
+    );
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
+
     return (
-        <div>
-            <h2 className="text-2xl font-bold mb-4">Users Management</h2>
-            <p>User management functionality coming soon...</p>
+        <div className="space-y-6">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Users Management</h2>
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="bg-dark-primary text-dark-text px-4 py-2 rounded border border-gray-600"
+                >
+                    <option value="all">All Users</option>
+                    <option value="active">Active</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+
+            {!users.length ? (
+                <div className="text-center py-8">
+                    <p className="text-gray-400 text-lg">No users found</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full bg-dark-primary rounded-lg overflow-hidden">
+                        <thead className="bg-dark-secondary">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Joined</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-700">
+                            {filteredUsers.map((user) => (
+                                <tr key={user._id} className="hover:bg-dark-primary/90">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <div className="h-10 w-10 flex-shrink-0">
+                                                <div className="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center">
+                                                    <span className="text-lg font-medium text-white">
+                                                        {user.name[0].toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="ml-4">
+                                                <div className="text-sm font-medium text-white">{user.name}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-gray-300">{user.email}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <select
+                                            value={user.status}
+                                            onChange={(e) => handleStatusChange(user._id, e.target.value)}
+                                            className="bg-dark-primary text-sm px-3 py-1 rounded border border-gray-600"
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="blocked">Blocked</option>
+                                            <option value="pending">Pending</option>
+                                        </select>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                        {new Date(user.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button
+                                            onClick={() => handleDeleteUser(user._id)}
+                                            className="text-red-500 hover:text-red-600"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };
@@ -175,9 +307,7 @@ const AdminPanel = () => {
         setError('');
         setSuccess(false);
         try {
-            let posterUrl = movieForm.posterUrl;
-
-            if (moviePoster) {
+            let posterUrl = movieForm.posterUrl; if (moviePoster) {
                 const posterData = new FormData();
                 posterData.append('image', moviePoster);
                 const posterRes = await axiosInstance.post('/add-poster', posterData, {
@@ -248,6 +378,25 @@ const AdminPanel = () => {
                     >
                         <FaFilm className="text-sm" />
                         <span>Manage Movies</span>
+                    </button>                    <button
+                        onClick={() => setActiveTab('theaters')}
+                        className={`w-full text-left p-2 rounded flex items-center space-x-2 ${activeTab === 'theaters'
+                            ? 'bg-dark-accent text-white'
+                            : 'hover:bg-dark-accent/20'
+                            }`}
+                    >
+                        <FaTheaterMasks className="text-sm" />
+                        <span>Theaters</span>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('shows')}
+                        className={`w-full text-left p-2 rounded flex items-center space-x-2 ${activeTab === 'shows'
+                            ? 'bg-dark-accent text-white'
+                            : 'hover:bg-dark-accent/20'
+                            }`}
+                    >
+                        <FaCalendarAlt className="text-sm" />
+                        <span>Shows</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('users')}
@@ -278,8 +427,10 @@ const AdminPanel = () => {
                             movies={movies}
                             handleEdit={handleEditStart}
                             fetchMovies={fetchMovies}
+                            setActiveTab={setActiveTab}
                         />
-                    )}
+                    )}                    {activeTab === 'theaters' && <ManageTheaters />}
+                    {activeTab === 'shows' && <ManageShows />}
                     {activeTab === 'users' && <Users />}
                     {activeTab === 'reports' && <Reports />}
                     {activeTab === 'addMovie' && (
