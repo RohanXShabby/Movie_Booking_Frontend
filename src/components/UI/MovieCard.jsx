@@ -1,25 +1,52 @@
-const MovieCard = ({ posterUrl, title, description, genre }) => {
+const MovieCard = ({ posterUrl, title, description, genre, rating = "N/A" }) => {
     return (
-        <div className='border border-dark-secondary flex flex-col justify-center py-4 rounded-2xl h-full items-center text-dark-text'>
-            <div className=' flex flex-col gap-4 p-3 h-full'>
-                <div className="h-[80%]">
-                    <img className='w-full h-full object-cover object-center' src={posterUrl} alt={title} />
+        <div className='group border border-dark-secondary hover:border-dark-accent transition-all duration-300 flex flex-col justify-between p-3 sm:p-4 rounded-2xl h-full shadow-lg hover:shadow-xl bg-dark-primary/50 backdrop-blur'>
+            {/* Image Container */}
+            <div className="relative w-full pb-[140%] overflow-hidden rounded-lg mb-4">
+                <img
+                    className='absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-300'
+                    src={posterUrl}
+                    alt={title}
+                    loading="lazy"
+                />
+                <div className="absolute top-2 right-2 bg-dark-accent text-white px-2 py-1 rounded-full text-sm font-semibold">
+                    ★ {rating}
                 </div>
-                <div className='flex flex-col gap-2 h-[20%]'>
-                    <div className='flex flex-col gap-1'>
-                        <div className='font-semibold text-2xl whitespace-nowrap'>
-                            {title}
-                        </div>
-                        <div className='text-dark-text/60'>
-                            {genre.map((e, i) => <span key={i} className='border border-dark-secondary px-2 mx-1'>{e}</span>)}
-                        </div>
-                    </div>
-                    <div className='line-clamp-2 font-medium text-sm text-dark-text/80'>
-                        {description}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <button className="w-full bg-dark-accent text-white py-2 rounded-lg font-semibold hover:bg-dark-accent/90 transition-colors">
+                            Book Now
+                        </button>
                     </div>
                 </div>
             </div>
 
+            {/* Content Container */}
+            <div className='flex flex-col gap-3'>
+                {/* Title and Rating */}
+                <div className="flex justify-between items-start">
+                    <h3 className='font-semibold text-lg sm:text-xl md:text-2xl line-clamp-1 group-hover:text-dark-accent transition-colors flex-1'>
+                        {title}
+                    </h3>
+                </div>
+
+                {/* Genres */}
+                <div className='flex flex-wrap gap-2'>
+                    {genre.map((g, i) => (
+                        <span
+                            key={i}
+                            className='text-xs sm:text-sm px-2 py-1 rounded-full border border-dark-secondary bg-dark-secondary/30 text-dark-text/80'
+                        >
+                            {g}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Description */}
+                <p className='line-clamp-2 text-xs sm:text-sm text-dark-text/70 font-medium'>
+                    {description}
+                </p>
+            </div>
         </div>
     )
 }

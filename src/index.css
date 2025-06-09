@@ -3,6 +3,7 @@
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -17,8 +18,60 @@ input[type="number"]::-webkit-outer-spin-button {
   --spacing-primary: 5vw;
 }
 
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
 @layer utilities {
   .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  .no-spinner {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .animate-fade-in-out {
+    animation: fadeInOut 3s ease-in-out forwards;
+  }
   .no-spinner::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
@@ -26,5 +79,9 @@ input[type="number"]::-webkit-outer-spin-button {
 
   .no-spinner {
     -moz-appearance: textfield;
+  }
+
+  .animate-fade-in-out {
+    animation: fadeInOut 3s ease-in-out forwards;
   }
 }

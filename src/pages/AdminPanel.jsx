@@ -109,11 +109,12 @@ const Users = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
-
-    const handleStatusChange = async (userId, newStatus) => {
+    }, []); const handleStatusChange = async (userId, newStatus, makeAdmin = false) => {
         try {
-            await axiosInstance.put(`/users/${userId}/status`, { status: newStatus });
+            await axiosInstance.put(`/api/users/${userId}/status`, {
+                status: newStatus,
+                isAdmin: makeAdmin
+            });
             toast.success('User status updated successfully');
             fetchUsers();
         } catch (err) {
@@ -196,16 +197,22 @@ const Users = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-300">{user.email}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    </td>                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <select
-                                            value={user.status}
-                                            onChange={(e) => handleStatusChange(user._id, e.target.value)}
+                                            value={user.isAdmin ? "admin" : user.status}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (value === "admin") {
+                                                    handleStatusChange(user._id, "active", true);
+                                                } else {
+                                                    handleStatusChange(user._id, value, false);
+                                                }
+                                            }}
                                             className="bg-dark-primary text-sm px-3 py-1 rounded border border-gray-600"
                                         >
-                                            <option value="active">Active</option>
-                                            <option value="blocked">Blocked</option>
-                                            <option value="pending">Pending</option>
+                                            <option value="active">Active User</option>
+                                            <option value="blocked">Blocked User</option>
+                                            <option value="admin">Admin</option>
                                         </select>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
