@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../Services/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
-import { toast } from 'react-toastify';
 
 const SelectSeats = () => {
-    const { ScreenId } = useParams();
+    const { ScreenId, theaterId } = useParams();
     const navigate = useNavigate();
     const { isLoggedIn, user } = useAuth();
     const [screenData, setScreenData] = useState(null);
@@ -14,24 +13,13 @@ const SelectSeats = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [processing, setProcessing] = useState(false);
-    const [seatTypeStats, setSeatTypeStats] = useState({
-        normal: { count: 0, total: 0 },
-        premium: { count: 0, total: 0 },
-        recliner: { count: 0, total: 0 }
-    });
 
     useEffect(() => {
         const fetchScreenData = async () => {
             try {
                 setIsLoading(true);
                 setError(null);
-                // Extract theaterId from URL
-                const pathSegments = window.location.pathname.split('/');
-                const theaterId = pathSegments[pathSegments.length - 3]; // Get theaterId from URL                 
                 const response = await axiosInstance.get(`/theaters/${theaterId}/screens/${ScreenId}`);
-                if (!response.data.screen || !response.data.screen.seatPricing) {
-                    throw new Error('Invalid screen data received from server');
-                }
                 setScreenData(response.data.screen);
 
                 // If user is logged in and there are saved seats, restore them
@@ -80,50 +68,26 @@ const SelectSeats = () => {
         };
     }, [ScreenId, isLoggedIn]);
 
-    const toggleSeat = (rowIndex, seatIndex) => {
-        if (!isLoggedIn) {
-            toast.error('Please login to select seats');
-            return;
-        }
+    const toggleSeat = (seat) => {
+        setSelectedSeats(prev => {
+            const newSelected = prev.includes(seat.seatNumber)
+                ? prev.filter(s => s !== seat.seatNumber)
+                : [...prev, seat.seatNumber];
 
-        const seat = screenData.layout[rowIndex][seatIndex];
-        if (!seat.available) return;
+            // Calculate new total price based on row position
+            let newTotalPrice = 0;
+            screenData.layout.forEach((row, rowIndex) => {
+                row.forEach(s => {
+                    if (newSelected.includes(s.seatNumber)) {
+                        // Premium seats (first two rows) cost 300, others 200
+                        newTotalPrice += rowIndex < 2 ? 300 : 200;
+                    }
+                });
+            });
 
-        const seatId = `${String.fromCharCode(65 + rowIndex)}${seatIndex + 1}`;
-        const seatExists = selectedSeats.find(s => s.seatId === seatId);
-        const seatPrice = screenData.seatPricing[seat.seatType];
-
-        if (seatExists) {
-            setSelectedSeats(prev => prev.filter(s => s.seatId !== seatId));
-            setTotalPrice(prev => prev - seatPrice);
-            setSeatTypeStats(prev => ({
-                ...prev,
-                [seat.seatType]: {
-                    count: prev[seat.seatType].count - 1,
-                    total: prev[seat.seatType].total - seatPrice
-                }
-            }));
-        } else {
-            if (selectedSeats.length >= 10) {
-                toast.error('Maximum 10 seats allowed per booking');
-                return;
-            }
-            setSelectedSeats(prev => [...prev, {
-                seatId,
-                rowIndex,
-                seatIndex,
-                type: seat.seatType,
-                price: seatPrice
-            }]);
-            setTotalPrice(prev => prev + seatPrice);
-            setSeatTypeStats(prev => ({
-                ...prev,
-                [seat.seatType]: {
-                    count: prev[seat.seatType].count + 1,
-                    total: prev[seat.seatType].total + seatPrice
-                }
-            }));
-        }
+            setTotalPrice(newTotalPrice);
+            return newSelected;
+        });
     };
 
     const handlePayment = async () => {
@@ -155,7 +119,7 @@ const SelectSeats = () => {
             }
 
             const options = {
-                key: import.meta.env.RAZORPAY_KEY_ID,
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
                 amount: 100, // amount in paisa (₹1)
                 currency: "INR",
                 name: "Movie Square",
@@ -297,22 +261,10 @@ const SelectSeats = () => {
 
     return (
         <div className="relative px-4 py-6 text-white bg-dark-primary">
-            {/* Seat Type Summary */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {Object.entries(seatTypeStats).map(([type, stats]) => stats.count > 0 && (
-                    <div key={type} className={`text-sm px-4 py-2 rounded-lg shadow-lg
-                        ${type === 'premium' ? 'bg-green-500' :
-                            type === 'recliner' ? 'bg-purple-500' :
-                                'bg-blue-500'}`}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}: {stats.count} (₹{stats.total})
-                    </div>
-                ))}
-            </div>
-
-            {/* Selected Seat Counter and Total Price */}
+            {/* Selected Seat Counter and Price */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 md:flex-row md:gap-4">
                 <div className="text-sm bg-dark-accent text-white px-4 py-2 rounded-lg shadow-lg">
-                    Selected: {selectedSeats.length}
+                    Selected: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
                 </div>
                 <div className="text-sm bg-dark-secondary text-white px-4 py-2 rounded-lg shadow-lg">
                     Total: ₹{totalPrice}
@@ -323,24 +275,18 @@ const SelectSeats = () => {
             <div className="text-center mb-6">
                 <h2 className="text-xl font-semibold">{screenData.screenName}</h2>
                 <p className="text-sm text-gray-400">Total Seats: {screenData.totalSeats}</p>
-            </div>            {/* Price Legend */}
+            </div>
+
+            {/* Price Legend */}
             <div className="flex justify-center gap-4 mb-6">
-                {screenData?.seatPricing && (
-                    <>
-                        <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 bg-blue-500 rounded-sm"></span>
-                            <span className="text-sm">Normal (₹{screenData.seatPricing.normal || 150})</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 bg-green-500 rounded-sm"></span>
-                            <span className="text-sm">Premium (₹{screenData.seatPricing.premium || 200})</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 bg-purple-500 rounded-sm"></span>
-                            <span className="text-sm">Recliner (₹{screenData.seatPricing.recliner || 300})</span>
-                        </div>
-                    </>
-                )}
+                <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 bg-green-500 rounded-sm"></span>
+                    <span className="text-sm">Premium (₹300)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 bg-blue-500 rounded-sm"></span>
+                    <span className="text-sm">Standard (₹200)</span>
+                </div>
             </div>
 
             {/* Seat Layout */}
@@ -348,57 +294,37 @@ const SelectSeats = () => {
                 {screenData.layout.map((row, rowIndex) => (
                     <div key={rowIndex} className="flex gap-2">
                         {row.map((seat, seatIndex) => {
-                            const isSelected = selectedSeats.some(s => s.seatId === `${String.fromCharCode(65 + rowIndex)}${seatIndex + 1}`);
-                            const isBooked = !seat.available;
-                            const seatStyles = {
-                                normal: {
-                                    border: 'border-blue-500',
-                                    hover: 'hover:bg-blue-500/20',
-                                    text: 'text-blue-500',
-                                    selected: 'bg-blue-500 text-white'
-                                },
-                                premium: {
-                                    border: 'border-green-500',
-                                    hover: 'hover:bg-green-500/20',
-                                    text: 'text-green-500',
-                                    selected: 'bg-green-500 text-white'
-                                },
-                                recliner: {
-                                    border: 'border-purple-500',
-                                    hover: 'hover:bg-purple-500/20',
-                                    text: 'text-purple-500',
-                                    selected: 'bg-purple-500 text-white'
-                                }
-                            };
-
-                            const seatPrice = screenData.seatPricing[seat.seatType];
+                            const isSelected = selectedSeats.includes(seat.seatNumber);
+                            const isBooked = seat.isBooked;
+                            const isPremium = rowIndex < 2; // First two rows are premium
 
                             return (
-                                <div key={seatIndex} className="relative group">
-                                    <button
-                                        onClick={() => !isBooked && toggleSeat(rowIndex, seatIndex)}
-                                        disabled={isBooked}
+                                <div key={seatIndex} className={`relative group}`}>
+                                    <span
+                                        onClick={() => !isBooked && toggleSeat(seat)}
                                         className={`
-                                            p-2 h-12 w-12 flex items-center justify-center rounded-sm text-sm border-2
-                                            transition-all duration-200
-                                            ${isBooked
-                                                ? 'bg-gray-600 cursor-not-allowed text-gray-400 border-gray-500'
+                                           
+                                                p-2 h-12 w-12 flex items-center justify-center rounded-sm text-sm
+                                                ${isBooked
+                                                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                                                 : isSelected
-                                                    ? `${seatStyles[seat.seatType]?.selected || seatStyles.normal.selected} cursor-pointer`
-                                                    : `cursor-pointer 
-                                                       ${seatStyles[seat.seatType]?.border || seatStyles.normal.border} 
-                                                       ${seatStyles[seat.seatType]?.text || seatStyles.normal.text} 
-                                                       ${seatStyles[seat.seatType]?.hover || seatStyles.normal.hover}`
-                                            }`}
-                                        title={`${seat.seatType.charAt(0).toUpperCase() + seat.seatType.slice(1)} Seat`}
+                                                    ? `${isPremium
+                                                        ? 'border-green-500 bg-green-500'
+                                                        : 'border-blue-500 bg-blue-500'
+                                                    }`
+                                                    : `border-2 cursor-pointer ${isPremium
+                                                        ? 'border-green-500 hover:bg-green-500/50'
+                                                        : 'border-blue-500 hover:bg-blue-500/50'
+                                                    }`
+                                            }
+                                            `}
                                     >
-                                        {String.fromCharCode(65 + rowIndex)}{seatIndex + 1}
-                                    </button>
-                                    {/* Seat info tooltip */}
+                                        {seat.seatNumber}
+                                    </span>
+                                    {/* Price tooltip */}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-dark-secondary rounded text-xs
-                                                opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap
-                                                shadow-lg border border-gray-600">
-                                        {seat.seatType.charAt(0).toUpperCase() + seat.seatType.slice(1)} - ₹{seatPrice}
+                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                        ₹{isPremium ? '300' : '200'}
                                     </div>
                                 </div>
                             );
