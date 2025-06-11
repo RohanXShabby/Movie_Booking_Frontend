@@ -3,26 +3,60 @@ import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import axiosInstance from '../../Services/axiosInstance';
 import { toast } from 'react-toastify';
 
-const AddTheaterModal = ({ isOpen, onClose, onSave, editingTheater = null }) => {
+const AddTheaterModal = ({ isOpen, onClose, onSave, editingTheater = null, loading = false }) => {
     const [theaterForm, setTheaterForm] = useState({
         name: '',
         city: '',
         address: '',
     });
+    const [formErrors, setFormErrors] = useState({});
+    const [localLoading, setLocalLoading] = useState(false);
 
     useEffect(() => {
         if (editingTheater) {
             setTheaterForm({
-                name: editingTheater.name,
-                city: editingTheater.city,
-                address: editingTheater.address,
+                name: editingTheater.name || '',
+                city: editingTheater.city || '',
+                address: editingTheater.address || '',
+            });
+        } else {
+            setTheaterForm({
+                name: '',
+                city: '',
+                address: '',
             });
         }
-    }, [editingTheater]);
+        setFormErrors({});
+    }, [editingTheater, isOpen]);
 
-    const handleSubmit = (e) => {
+    const validateForm = () => {
+        const errors = {};
+        if (!theaterForm.name.trim()) errors.name = 'Theater name is required';
+        if (!theaterForm.city.trim()) errors.city = 'City is required';
+        if (!theaterForm.address.trim()) errors.address = 'Address is required';
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    }; const handleSubmit = async (e) => {
         e.preventDefault();
-        onSave(theaterForm);
+        setLocalLoading(true);
+
+        if (!validateForm()) {
+            setLocalLoading(false);
+            return;
+        }
+
+        try {
+            await onSave(theaterForm);
+            onClose();
+        } catch (error) {
+            if (error.response?.data?.errors) {
+                setFormErrors(error.response.data.errors);
+            } else {
+                toast.error(error.response?.data?.message || 'Failed to save theater');
+            }
+        } finally {
+            setLocalLoading(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -37,44 +71,69 @@ const AddTheaterModal = ({ isOpen, onClose, onSave, editingTheater = null }) => 
                         <input
                             type="text"
                             value={theaterForm.name}
-                            onChange={(e) => setTheaterForm(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full bg-dark-primary p-2 rounded border border-gray-600"
-                            required
+                            onChange={(e) => {
+                                setTheaterForm(prev => ({ ...prev, name: e.target.value }));
+                                if (formErrors.name) {
+                                    setFormErrors(prev => ({ ...prev, name: '' }));
+                                }
+                            }}
+                            className={`w-full bg-dark-primary p-2 rounded border ${formErrors.name ? 'border-red-500' : 'border-gray-600'
+                                }`}
                         />
-                    </div>
-                    <div>
+                        {formErrors.name && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                        )}
+                    </div>                    <div>
                         <label className="block mb-1">City</label>
                         <input
                             type="text"
                             value={theaterForm.city}
-                            onChange={(e) => setTheaterForm(prev => ({ ...prev, city: e.target.value }))}
-                            className="w-full bg-dark-primary p-2 rounded border border-gray-600"
-                            required
+                            onChange={(e) => {
+                                setTheaterForm(prev => ({ ...prev, city: e.target.value }));
+                                if (formErrors.city) {
+                                    setFormErrors(prev => ({ ...prev, city: '' }));
+                                }
+                            }}
+                            className={`w-full bg-dark-primary p-2 rounded border ${formErrors.city ? 'border-red-500' : 'border-gray-600'
+                                }`}
                         />
+                        {formErrors.city && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block mb-1">Address</label>
                         <textarea
                             value={theaterForm.address}
-                            onChange={(e) => setTheaterForm(prev => ({ ...prev, address: e.target.value }))}
-                            className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                            onChange={(e) => {
+                                setTheaterForm(prev => ({ ...prev, address: e.target.value }));
+                                if (formErrors.address) {
+                                    setFormErrors(prev => ({ ...prev, address: '' }));
+                                }
+                            }}
+                            className={`w-full bg-dark-primary p-2 rounded border ${formErrors.address ? 'border-red-500' : 'border-gray-600'
+                                }`}
                             rows="3"
-                            required
                         />
+                        {formErrors.address && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>
+                        )}
                     </div>
                     <div className="flex justify-end gap-3">
                         <button
                             type="button"
                             onClick={onClose}
                             className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                            disabled={localLoading || loading}
                         >
                             Cancel
-                        </button>                        <button
+                        </button>
+                        <button
                             type="submit"
-                            disabled={loading}
+                            disabled={localLoading || loading}
                             className="px-4 py-2 bg-dark-accent text-white rounded hover:bg-dark-accent/80 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? (
+                            {(localLoading || loading) ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
                                     <span>{editingTheater ? 'Updating...' : 'Adding...'}</span>
@@ -90,89 +149,355 @@ const AddTheaterModal = ({ isOpen, onClose, onSave, editingTheater = null }) => 
     );
 };
 
-const AddScreenModal = ({ isOpen, onClose, onSave, theaterId }) => {
+const AddScreenModal = ({ isOpen, onClose, onSave, theaterId, loading = false }) => {
     const [screenForm, setScreenForm] = useState({
-        name: '',
-        totalSeats: '',
+        screenName: '',
         rows: 10,
         seatsPerRow: 10,
-        seatTypes: {
-            normal: { price: 150, color: 'gray' },
-            premium: { price: 200, color: 'gold' },
-            recliner: { price: 300, color: 'purple' }
-        }
+        seatPricing: {
+            normal: 150,
+            premium: 200,
+            recliner: 300
+        },
+        rowTypes: Array(10).fill('normal')
     });
+    const [formErrors, setFormErrors] = useState({});
+    const [localLoading, setLocalLoading] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
+
+    // Validate form fields
+    const validateForm = () => {
+        const errors = {};
+        if (!screenForm.screenName.trim()) errors.screenName = 'Screen name is required';
+        if (screenForm.rows < 1 || screenForm.rows > 26) errors.rows = 'Rows must be between 1 and 26';
+        if (screenForm.seatsPerRow < 1 || screenForm.seatsPerRow > 20) errors.seatsPerRow = 'Seats per row must be between 1 and 20';
+        if (screenForm.seatPricing.normal < 0) errors.normalPrice = 'Price cannot be negative';
+        if (screenForm.seatPricing.premium < 0) errors.premiumPrice = 'Price cannot be negative';
+        if (screenForm.seatPricing.recliner < 0) errors.reclinerPrice = 'Price cannot be negative';
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    // Reset form when modal is closed
+    useEffect(() => {
+        if (!isOpen) {
+            setScreenForm({
+                screenName: '',
+                rows: 10,
+                seatsPerRow: 10,
+                seatPricing: {
+                    normal: 150,
+                    premium: 200,
+                    recliner: 300
+                },
+                rowTypes: Array(10).fill('normal')
+            });
+            setFormErrors({});
+            setShowPreview(false);
+        }
+    }, [isOpen]);
+
+    // Update row types when number of rows changes
+    useEffect(() => {
+        setScreenForm(prev => ({
+            ...prev,
+            rowTypes: Array(prev.rows).fill(prev.rowTypes[0] || 'normal')
+        }));
+    }, [screenForm.rows]);
 
     const generateLayout = () => {
         const layout = [];
         for (let i = 0; i < screenForm.rows; i++) {
             const row = [];
             const rowLetter = String.fromCharCode(65 + i);
+            const rowType = screenForm.rowTypes[i];
             for (let j = 0; j < screenForm.seatsPerRow; j++) {
                 const seatNumber = `${rowLetter}${j + 1}`;
                 row.push({
                     seatNumber,
-                    seatType: i < 3 ? 'normal' : i < 7 ? 'premium' : 'recliner',
+                    seatType: rowType,
                     available: true
                 });
             }
             layout.push(row);
         }
         return layout;
+    }; const getSeatPreviewStyles = (type) => {
+        switch (type) {
+            case 'premium':
+                return {
+                    bg: 'bg-green-500',
+                    hover: 'hover:bg-green-600',
+                    icon: '🌟'
+                };
+            case 'recliner':
+                return {
+                    bg: 'bg-purple-500',
+                    hover: 'hover:bg-purple-600',
+                    icon: '🛋️'
+                };
+            default:
+                return {
+                    bg: 'bg-blue-500',
+                    hover: 'hover:bg-blue-600',
+                    icon: '💺'
+                };
+        }
+    };
+
+    const setAllRowsType = (type) => {
+        setScreenForm(prev => ({
+            ...prev,
+            rowTypes: Array(prev.rows).fill(type)
+        }));
+    };
+
+    const renderLayoutPreview = () => {
+        return (
+            <div className="mt-4 p-4 bg-dark-primary rounded-lg">
+                <div className="flex justify-between mb-4">
+                    <h4 className="text-sm font-medium">Layout Preview</h4>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAllRowsType('normal')}
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            All Normal
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAllRowsType('premium')}
+                            className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                            All Premium
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAllRowsType('recliner')}
+                            className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                        >
+                            All Recliner
+                        </button>
+                    </div>
+                </div>
+                <div className="space-y-1 max-h-60 overflow-y-auto">
+                    {Array(screenForm.rows).fill(0).map((_, rowIndex) => (
+                        <div key={rowIndex} className="flex items-center gap-2">
+                            <span className="text-xs w-6">{String.fromCharCode(65 + rowIndex)}</span>
+                            <div className="flex gap-1 flex-1">
+                                {Array(screenForm.seatsPerRow).fill(0).map((_, seatIndex) => (<div
+                                    key={seatIndex}
+                                    className={`w-6 h-6 rounded-sm ${getSeatPreviewStyles(screenForm.rowTypes[rowIndex]).bg} ${getSeatPreviewStyles(screenForm.rowTypes[rowIndex]).hover} opacity-90 flex items-center justify-center text-xs transition-colors cursor-default`}
+                                    title={`${String.fromCharCode(65 + rowIndex)}${seatIndex + 1} (${screenForm.rowTypes[rowIndex]}) - ₹${screenForm.seatPricing[screenForm.rowTypes[rowIndex]]}`}
+                                >
+                                    <span className="text-[10px]">{getSeatPreviewStyles(screenForm.rowTypes[rowIndex]).icon}</span>
+                                </div>
+                                ))}
+                            </div>
+                            <select
+                                value={screenForm.rowTypes[rowIndex]}
+                                onChange={(e) => {
+                                    const newRowTypes = [...screenForm.rowTypes];
+                                    newRowTypes[rowIndex] = e.target.value;
+                                    setScreenForm(prev => ({
+                                        ...prev,
+                                        rowTypes: newRowTypes
+                                    }));
+                                }}
+                                className="bg-dark-secondary text-xs p-1 rounded border border-gray-600"
+                            >
+                                <option value="normal">Normal (₹{screenForm.seatPricing.normal})</option>
+                                <option value="premium">Premium (₹{screenForm.seatPricing.premium})</option>
+                                <option value="recliner">Recliner (₹{screenForm.seatPricing.recliner})</option>
+                            </select>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-4 text-center">
+                    <div className="w-1/2 h-1 bg-gray-500 mx-auto rounded"></div>
+                    <span className="text-xs text-gray-400">SCREEN</span>
+                </div>
+            </div>
+        );
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setLocalLoading(true);
+
+        if (!theaterId) {
+            toast.error('Theater ID is missing');
+            setLocalLoading(false);
+            return;
+        }
+
+        if (!validateForm()) {
+            setLocalLoading(false);
+            return;
+        }
+
         const layout = generateLayout();
         onSave({
-            ...screenForm,
+            name: screenForm.screenName,
             layout,
             totalSeats: screenForm.rows * screenForm.seatsPerRow,
-            theaterId
+            theaterId,
+            seatPricing: screenForm.seatPricing
+        }).finally(() => {
+            setLocalLoading(false);
         });
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-dark-secondary rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-dark-secondary rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <h2 className="text-2xl font-bold mb-4">Add New Screen</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Basic Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block mb-1">Screen Name</label>
+                            <input
+                                type="text"
+                                value={screenForm.screenName}
+                                onChange={(e) => setScreenForm(prev => ({ ...prev, screenName: e.target.value }))}
+                                className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block mb-1">Rows (A-Z)</label>
+                                <input
+                                    type="number"
+                                    value={screenForm.rows}
+                                    onChange={(e) => setScreenForm(prev => ({ ...prev, rows: Math.max(1, Math.min(26, parseInt(e.target.value) || 1)) }))}
+                                    className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                    min="1"
+                                    max="26"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block mb-1">Seats/Row</label>
+                                <input
+                                    type="number"
+                                    value={screenForm.seatsPerRow}
+                                    onChange={(e) => setScreenForm(prev => ({ ...prev, seatsPerRow: Math.max(1, Math.min(20, parseInt(e.target.value) || 1)) }))}
+                                    className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                    min="1"
+                                    max="20"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pricing */}
                     <div>
-                        <label className="block mb-1">Screen Name</label>
-                        <input
-                            type="text"
-                            value={screenForm.name}
-                            onChange={(e) => setScreenForm(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full bg-dark-primary p-2 rounded border border-gray-600"
-                            required
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block mb-1">Number of Rows</label>
-                            <input
-                                type="number"
-                                value={screenForm.rows}
-                                onChange={(e) => setScreenForm(prev => ({ ...prev, rows: parseInt(e.target.value) }))}
-                                className="w-full bg-dark-primary p-2 rounded border border-gray-600"
-                                min="1"
-                                required
-                            />
+                        <h3 className="font-medium mb-2">Seat Pricing</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm mb-1">Normal Price (₹)</label>
+                                <input
+                                    type="number"
+                                    value={screenForm.seatPricing.normal}
+                                    onChange={(e) => setScreenForm(prev => ({
+                                        ...prev,
+                                        seatPricing: {
+                                            ...prev.seatPricing,
+                                            normal: parseInt(e.target.value) || 0
+                                        }
+                                    }))}
+                                    className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">Premium Price (₹)</label>
+                                <input
+                                    type="number"
+                                    value={screenForm.seatPricing.premium}
+                                    onChange={(e) => setScreenForm(prev => ({
+                                        ...prev,
+                                        seatPricing: {
+                                            ...prev.seatPricing,
+                                            premium: parseInt(e.target.value) || 0
+                                        }
+                                    }))}
+                                    className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                    min="0"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm mb-1">Recliner Price (₹)</label>
+                                <input
+                                    type="number"
+                                    value={screenForm.seatPricing.recliner}
+                                    onChange={(e) => setScreenForm(prev => ({
+                                        ...prev,
+                                        seatPricing: {
+                                            ...prev.seatPricing,
+                                            recliner: parseInt(e.target.value) || 0
+                                        }
+                                    }))}
+                                    className="w-full bg-dark-primary p-2 rounded border border-gray-600"
+                                    min="0"
+                                    required
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block mb-1">Seats per Row</label>
-                            <input
-                                type="number"
-                                value={screenForm.seatsPerRow}
-                                onChange={(e) => setScreenForm(prev => ({ ...prev, seatsPerRow: parseInt(e.target.value) }))}
-                                className="w-full bg-dark-primary p-2 rounded border border-gray-600"
-                                min="1"
-                                required
-                            />
-                        </div>
                     </div>
+
+                    {/* Layout Configuration */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-medium">Layout Configuration</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowPreview(!showPreview)}
+                                className="text-sm text-dark-accent hover:text-dark-accent/80"
+                            >
+                                {showPreview ? 'Hide Preview' : 'Show Preview'}
+                            </button>
+                        </div>
+
+                        {showPreview ? (
+                            renderLayoutPreview()
+                        ) : (
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2 bg-dark-primary rounded border border-gray-600">
+                                {screenForm.rowTypes.map((type, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <span className="text-sm">Row {String.fromCharCode(65 + index)}:</span>
+                                        <select
+                                            value={type}
+                                            onChange={(e) => {
+                                                const newRowTypes = [...screenForm.rowTypes];
+                                                newRowTypes[index] = e.target.value;
+                                                setScreenForm(prev => ({
+                                                    ...prev,
+                                                    rowTypes: newRowTypes
+                                                }));
+                                            }}
+                                            className="bg-dark-secondary p-1 rounded border border-gray
+-600 text-sm flex-1"
+                                        >
+                                            <option value="normal">Normal (₹{screenForm.seatPricing.normal})</option>
+                                            <option value="premium">Premium (₹{screenForm.seatPricing.premium})</option>
+                                            <option value="recliner">Recliner (₹{screenForm.seatPricing.recliner})</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Actions */}
                     <div className="flex justify-end gap-3">
                         <button
                             type="button"
@@ -180,7 +505,8 @@ const AddScreenModal = ({ isOpen, onClose, onSave, theaterId }) => {
                             className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                         >
                             Cancel
-                        </button>                        <button
+                        </button>
+                        <button
                             type="submit"
                             disabled={loading}
                             className="px-4 py-2 bg-dark-accent text-white rounded hover:bg-dark-accent/80 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -238,12 +564,15 @@ const ManageTheaters = () => {
     }; const handleSaveScreen = async (screenData) => {
         try {
             setLoading(true);
-            await axiosInstance.post(`/theaters/${screenData.theaterId}/screens`, screenData);
+            console.log('Sending screen data:', screenData); // Debug log
+            const response = await axiosInstance.post(`/theaters/${screenData.theaterId}/screens`, screenData);
+            console.log('Screen creation response:', response.data); // Debug log
             toast.success('Screen added successfully');
-            fetchTheaters();
+            await fetchTheaters();
             setIsScreenModalOpen(false);
             setSelectedTheater(null);
         } catch (err) {
+            console.error('Error adding screen:', err.response || err); // Debug log
             toast.error(err.response?.data?.message || 'Failed to add screen');
         } finally {
             setLoading(false);
@@ -394,9 +723,7 @@ const ManageTheaters = () => {
                 }}
                 onSave={handleSaveTheater}
                 editingTheater={editingTheater}
-            />
-
-            <AddScreenModal
+            />            <AddScreenModal
                 isOpen={isScreenModalOpen}
                 onClose={() => {
                     setIsScreenModalOpen(false);
@@ -404,6 +731,7 @@ const ManageTheaters = () => {
                 }}
                 onSave={handleSaveScreen}
                 theaterId={selectedTheater?._id}
+                loading={loading}
             />
         </div>
     );

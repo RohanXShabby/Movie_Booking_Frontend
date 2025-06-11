@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../Services/axiosInstance';
 import { FaFilm, FaUsers, FaChartBar, FaPlus, FaTheaterMasks, FaCalendarAlt } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import ManageTheaters from '../components/admin/ManageTheaters';
 import ManageShows from '../components/admin/ManageShows';
 
@@ -356,13 +356,8 @@ const AdminPanel = () => {
         });
         setIsEdit(true);
         setActiveTab('addMovie');
-    };
-
-    return (
+    }; return (
         <div className="flex min-h-screen bg-dark-primary text-dark-text">
-            <div>
-                <ToastContainer position="top-right" />
-            </div>
             <aside className="w-64 bg-dark-secondary p-6">
                 <h2 className="text-xl font-bold mb-6">Admin Dashboard</h2>
                 <nav className="space-y-4">

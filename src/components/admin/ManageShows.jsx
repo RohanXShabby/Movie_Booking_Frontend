@@ -88,13 +88,28 @@ const ManageShows = () => {
         e.preventDefault();
         try {
             setLoading(true);
+
+            // Get screen details to set proper pricing
+            const screenResponse = await axiosInstance.get(`/theaters/${showForm.theaterId}/screens/${showForm.screenId}`);
+            const screenPricing = screenResponse.data.screen.seatPricing;
+
+            const showData = {
+                ...showForm,
+                seatPrice: [
+                    { seatType: 'normal', price: screenPricing.normal },
+                    { seatType: 'premium', price: screenPricing.premium },
+                    { seatType: 'recliner', price: screenPricing.recliner }
+                ]
+            };
+
             if (isEdit) {
-                await axiosInstance.put(`/shows/${showForm._id}`, showForm);
+                await axiosInstance.put(`/shows/${showForm._id}`, showData);
                 toast.success('Show updated successfully');
             } else {
-                await axiosInstance.post('/shows', showForm);
+                await axiosInstance.post('/shows', showData);
                 toast.success('Show added successfully');
             }
+
             setShowForm({
                 movieId: '',
                 theaterId: '',
@@ -102,10 +117,7 @@ const ManageShows = () => {
                 date: '',
                 time: '',
                 format: '',
-                seatPrice: [
-                    { seatType: 'normal', price: 200 },
-                    { seatType: 'premium', price: 300 }
-                ]
+                seatPrice: []
             });
             setIsEdit(false); fetchShows();
         } catch (err) {

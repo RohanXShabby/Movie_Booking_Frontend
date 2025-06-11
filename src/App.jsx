@@ -18,6 +18,8 @@ import MoviesBookingPage from "./pages/MoviesBookingPage.jsx";
 import TicketBookingPage from "./pages/TicketBookingPage.jsx";
 import SelectSeats from "./components/UI/SelectSeats.jsx";
 import { getAllMovie, getMovieById, getTheatersByMovie } from "./api/user.api.js";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const router = createBrowserRouter([
@@ -48,6 +50,26 @@ function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        style={{
+          '--toastify-color-success': '#10B981',
+          '--toastify-color-error': '#EF4444',
+          '--toastify-color-warning': '#F59E0B',
+          '--toastify-color-info': '#3B82F6',
+          '--toastify-text-color-dark': '#FFFFFF',
+          '--toastify-color-dark': '#30475e',
+        }}
+      />
     </AuthProvider>
   );
 }
