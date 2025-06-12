@@ -13,6 +13,7 @@ const SelectSeats = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [processing, setProcessing] = useState(false);
+    const [recliner, setRecliner] = useState([])
 
     useEffect(() => {
         const fetchScreenData = async () => {
@@ -20,6 +21,17 @@ const SelectSeats = () => {
                 setIsLoading(true);
                 setError(null);
                 const response = await axiosInstance.get(`/theaters/${theaterId}/screens/${ScreenId}`);
+                const layout = response.data.screen.layout
+                console.log(layout)
+                const reclinerSeats = [];
+                layout.forEach((row) => {
+                    row.forEach((seat) => {
+                        if (seat.seatType === "recliner") {
+                            reclinerSeats.push(seat);
+                        }
+                    });
+                });
+                setRecliner(reclinerSeats);
                 setScreenData(response.data.screen);
 
                 // If user is logged in and there are saved seats, restore them
@@ -111,7 +123,7 @@ const SelectSeats = () => {
             setProcessing(true);
             // Create order on server (using ₹1 for testing)
             const orderResponse = await axiosInstance.post('/payment/create-order', {
-                amount: 1  // For testing, actual amount would be totalPrice
+                amount: 1100  // For testing, actual amount would be totalPrice
             });
 
             if (!orderResponse.data.success) {
@@ -120,12 +132,13 @@ const SelectSeats = () => {
 
             const options = {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                amount: 100, // amount in paisa (₹1)
+                amount: 1100, // amount in paisa (₹11)
                 currency: "INR",
                 name: "Movie Square",
                 description: `Booking ${selectedSeats.length} seats`,
                 order_id: orderResponse.data.order.id,
                 handler: async function (response) {
+                    console.log(response)
                     try {
                         const verifyResponse = await axiosInstance.post('/payment/verify', {
                             razorpay_order_id: response.razorpay_order_id,
@@ -296,14 +309,13 @@ const SelectSeats = () => {
                         {row.map((seat, seatIndex) => {
                             const isSelected = selectedSeats.includes(seat.seatNumber);
                             const isBooked = seat.isBooked;
-                            const isPremium = rowIndex < 2; // First two rows are premium
+                            const isPremium = rowIndex < 4;
 
                             return (
                                 <div key={seatIndex} className={`relative group}`}>
                                     <span
                                         onClick={() => !isBooked && toggleSeat(seat)}
                                         className={`
-                                           
                                                 p-2 h-12 w-12 flex items-center justify-center rounded-sm text-sm
                                                 ${isBooked
                                                 ? 'bg-gray-600 cursor-not-allowed text-gray-400'
@@ -323,7 +335,7 @@ const SelectSeats = () => {
                                     </span>
                                     {/* Price tooltip */}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-dark-secondary rounded text-xs
-                                            opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                            opacity-0 group-hover:opacity-100 z-10 transition-opacity duration-200 pointer-events-none">
                                         ₹{isPremium ? '300' : '200'}
                                     </div>
                                 </div>
