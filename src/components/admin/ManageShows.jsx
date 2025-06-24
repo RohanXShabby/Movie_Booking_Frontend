@@ -73,6 +73,7 @@ const ManageShows = () => {
         fetchShows();
         fetchMovies();
         fetchTheaters();
+        console.log(shows)
     }, []);
 
     useEffect(() => {
@@ -329,11 +330,11 @@ const ManageShows = () => {
                     </div>
                 ) : (
                     shows.map((show) => (
-                        <div key={show._id} className="bg-dark-primary p-4 rounded-lg flex justify-between items-start hover:bg-dark-primary/90 transition">
+                        <div  key={show._id} className="bg-dark-primary p-4 rounded-lg flex justify-between items-start hover:bg-dark-primary/90 transition" >
                             <div className="flex-1">
                                 <h3 className="font-semibold text-lg">{show.movieId.title}</h3>
                                 <p className="text-gray-400">
-                                    {show.theaterId.name} • {show.screenId.name}
+                                    {show.theaterId?.name ?? "Unknown Theater"} • {show.screenId?.name ?? "Unknown Screen"}
                                 </p>
                                 <p className="text-gray-400">
                                     {formatDate(show.date)} at {show.time} • {show.format}
@@ -366,7 +367,7 @@ const ManageShows = () => {
                     ))
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

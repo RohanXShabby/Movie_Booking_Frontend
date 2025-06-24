@@ -25,22 +25,25 @@ const DateBar = () => {
     };
 
     return (
-        <div className="flex justify-start gap-4 bg-dark-primary px-10 md:px-40 rounded-lg shadow-md text-dark-text overflow-x-auto">
-            {days.map(({ day, date, month }, index) => (
-                <div
-                    key={index}
-                    onClick={() => handleActive(index)}
-                    className={`flex flex-col items-center px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap ${activeIndex === index
-                        ? 'bg-dark-accent text-white'
-                        : 'text-dark-text hover:bg-dark-secondary transition'
-                        }`}
-                >
-                    <span className="text-xs font-semibold">{day}</span>
-                    <span className="text-xl font-bold">{date}</span>
-                    <span className="text-xs">{month}</span>
-                </div>
-            ))}
-        </div>
+        <>
+            <div className="flex justify-start gap-4 bg-dark-primary px-10 md:px-40 rounded-lg shadow-md text-dark-text overflow-x-auto">
+                {days.map(({ day, date, month }, index) => (
+                    <div
+                        key={index}
+                        onClick={() => handleActive(index)}
+                        className={`flex flex-col items-center px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap ${activeIndex === index
+                            ? 'bg-dark-accent text-white'
+                            : 'text-dark-text hover:bg-dark-secondary transition'
+                            }`}
+                    >
+                        <span className="text-xs font-semibold">{day}</span>
+                        <span className="text-xl font-bold">{date}</span>
+                        <span className="text-xs">{month}</span>
+                    </div>
+                ))}
+            </div>
+            <pre className="px-30 text-dark-text/40 text-[12px]">*Dynamic date selection is currently unavailable to ensure system stability and easier maintenance.</pre>
+        </>
     );
 };
 
