@@ -1,8 +1,13 @@
 import React from 'react'
 import Navbar from '../components/UI/Navbar'
 import Footer from '../components/UI/Footer'
+import { useEffect } from 'react'
 
 const ErrorPage = () => {
+    useEffect(() => {
+        document.title = 'Error'
+    }, []);
+
     return (
         <div className='min-h-screen flex flex-col justify-between text-dark-text bg-dark-primary '>
             <Navbar />

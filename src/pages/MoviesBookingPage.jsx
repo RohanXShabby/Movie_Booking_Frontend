@@ -10,9 +10,10 @@ const MoviesBookingPage = () => {
     const [moviesDetails, setMoviesDetails] = useState({});
 
     useEffect(() => {
-        // Ensure data is set only once or when ID changes
         if (Data) {
             setMoviesDetails(Data);
+            document.title = moviesDetails.title
+
         }
     }, [id, Data]);
 
