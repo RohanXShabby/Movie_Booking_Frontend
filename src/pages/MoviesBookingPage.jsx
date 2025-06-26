@@ -12,7 +12,8 @@ const MoviesBookingPage = () => {
     useEffect(() => {
         if (Data) {
             setMoviesDetails(Data);
-            document.title = moviesDetails.title
+            document.title = Data.title
+            console.log(Data.title)
 
         }
     }, [id, Data]);
