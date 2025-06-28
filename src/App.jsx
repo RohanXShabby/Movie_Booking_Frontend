@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import HomeLayout from "./components/layout/HomeLayout.jsx";
@@ -49,7 +50,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <Suspense fallback={<div className="w-screen h-screen flex items-center justify-center"><span className="text-dark-accent text-2xl font-bold">Loading...</span></div>}>
+        <RouterProvider router={router} />
+      </Suspense>
       <ToastContainer
         position="top-right"
         autoClose={3000}
