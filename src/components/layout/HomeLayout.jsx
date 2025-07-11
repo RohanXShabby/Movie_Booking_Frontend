@@ -11,7 +11,7 @@ const HomeLayout = () => {
         <>
             <div className='min-h-screen flex flex-col justify-between  text-dark-text bg-dark-primary '>
                 <Navbar />
-                {navigate.state === "loading" ? <div className='w-screen h-screen flex items-center justify-center'><BeatLoader color='#f05454' /></div> : <Outlet />}
+                {navigate.state === "loading" ? <div className='w-screen h-screen flex items-center justify-center overflow-hidden'><BeatLoader color='#f05454' /></div> : <Outlet />}
                 <Footer />
             </div>
         </>
